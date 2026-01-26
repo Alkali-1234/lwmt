@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lwmt/components/cursor_fedback.dart';
+import 'package:lwmt/components/right_panel.dart';
 import 'package:lwmt/components/secondary_button.dart';
 import 'package:lwmt/models/day.dart';
 import 'package:lwmt/models/month.dart';
@@ -22,7 +23,7 @@ class _HomeState extends ConsumerState<Home> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            if (currentMonth.isLoading) {
+            if (!currentMonth.hasValue) {
               return Center(
                 child: Text(
                   "Loading data",
@@ -41,7 +42,7 @@ class _HomeState extends ConsumerState<Home> {
                     color: Colors.white.withValues(alpha: 0.5),
                   ),
                 ),
-                Expanded(child: Placeholder()),
+                Expanded(child: RightPanel()),
               ],
             );
           },
@@ -59,6 +60,7 @@ class LeftPanel extends ConsumerStatefulWidget {
 }
 
 class _LeftPanelState extends ConsumerState<LeftPanel> {
+  int currentDay = DateTime.now().day;
   @override
   Widget build(BuildContext context) {
     var currentMonth = ref.watch(currentMonthProvider);
@@ -103,11 +105,11 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  child: CreateSpendWidget(),
+                  child: CreateSpendWidget(day: currentDay),
                 ),
                 //* Current month -> days where today -> spendings -> map to widgets
                 ...currentMonth.value!.days
-                    .firstWhere((d) => d.day == DateTime.now().day)
+                    .firstWhere((d) => d.day == currentDay)
                     .spendings
                     .map<Widget>((day) {
                       return Padding(
@@ -115,6 +117,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
                         child: EditSpendWidget(
                           key: ValueKey(day),
                           spend: day,
+                          day: currentDay,
                           onChange: (s) {},
                           onDelete: () {},
                         ),
@@ -130,7 +133,8 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
 }
 
 class CreateSpendWidget extends ConsumerStatefulWidget {
-  const CreateSpendWidget({super.key});
+  const CreateSpendWidget({super.key, required this.day});
+  final int day;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -142,11 +146,16 @@ class _CreateSpendWidgetState extends ConsumerState<CreateSpendWidget> {
   TextEditingController controllerValue = TextEditingController();
 
   void insertSpending(Day? day) {
-    if (controllerInfo.text.isEmpty || day == null) {
+    if (controllerInfo.text.isEmpty ||
+        day == null ||
+        controllerValue.text.isEmpty) {
       return;
     }
     int? parsedValue = int.tryParse(controllerValue.text);
     if (parsedValue == null) return;
+    if (day.spendings.contains((controllerInfo.text, parsedValue))) {
+      return;
+    }
     ref
         .read(currentMonthProvider.notifier)
         .updateDay(
@@ -202,7 +211,7 @@ class _CreateSpendWidgetState extends ConsumerState<CreateSpendWidget> {
                     ),
                     onPressed: () => insertSpending(
                       currentMonth.value?.days.firstWhere(
-                        (d) => d.day == DateTime.now().day,
+                        (d) => d.day == widget.day,
                       ),
                     ),
                     label: Icon(
@@ -227,10 +236,12 @@ class EditSpendWidget extends ConsumerStatefulWidget {
     required this.spend,
     required this.onChange,
     required this.onDelete,
+    required this.day,
   });
   final (String, int) spend;
   final Function((String, int)) onChange;
   final Function onDelete;
+  final int day;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -245,6 +256,37 @@ class _EditSpendWidgetState extends ConsumerState<EditSpendWidget> {
     text: widget.spend.$2.toString(),
   );
   bool hovering = false;
+  void trashItem() {
+    final mo = ref.read(currentMonthProvider);
+    if (mo.hasValue == false) return;
+    var nm = mo.value!;
+    nm.days
+        .firstWhere((d) => d.day == widget.day)
+        .spendings
+        .remove(widget.spend);
+    ref.read(currentMonthProvider.notifier).updateMonth(nm);
+  }
+
+  void updateItem() {
+    final mo = ref.read(currentMonthProvider);
+    if (mo.hasValue == false) return;
+    var nm = mo.value!;
+    var li = nm.days
+        .firstWhere((d) => d.day == widget.day)
+        .spendings
+        .map(
+          (e) => e != widget.spend
+              ? e
+              : (
+                  controllerInfo.text,
+                  int.tryParse(controllerValue.text) ?? 10000,
+                ),
+        );
+    nm.days.firstWhere((d) => d.day == DateTime.now().day).spendings = li
+        .toList();
+    ref.read(currentMonthProvider.notifier).updateMonth(nm.copyWith());
+  }
+
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
@@ -262,7 +304,10 @@ class _EditSpendWidgetState extends ConsumerState<EditSpendWidget> {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: ItemInfoTextField(controller: controllerInfo),
+                    child: ItemInfoTextField(
+                      controller: controllerInfo,
+                      onChanged: (v) => setState(() {}),
+                    ),
                   ),
                   Expanded(
                     flex: 2,
@@ -294,7 +339,7 @@ class _EditSpendWidgetState extends ConsumerState<EditSpendWidget> {
                             backgroundColor: Colors.black,
                             foregroundColor: Colors.red,
                             onPressed: () {
-                              //TODO trash
+                              trashItem();
                             },
                             child: Icon(
                               Icons.delete_outline_outlined,
@@ -302,7 +347,9 @@ class _EditSpendWidgetState extends ConsumerState<EditSpendWidget> {
                             ),
                           )
                         : SecondaryButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              updateItem();
+                            },
                             child: Icon(Icons.check_rounded, size: 24),
                           ),
                   ),
@@ -373,12 +420,18 @@ class ItemValueTextField extends StatelessWidget {
 }
 
 class ItemInfoTextField extends StatelessWidget {
-  const ItemInfoTextField({super.key, required this.controller});
+  const ItemInfoTextField({
+    super.key,
+    required this.controller,
+    this.onChanged,
+  });
   final TextEditingController controller;
+  final Function(String)? onChanged;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      onChanged: onChanged,
       controller: controller,
       style: TextStyle(fontFamily: 'GoogleSansFlex'),
       cursorHeight: 16,

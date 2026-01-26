@@ -12,7 +12,7 @@ class CurrentMonth extends _$CurrentMonth {
   late Box<String> box;
 
   Future<void> updateDay(Day day) async {
-    if (!state.hasValue) {
+    if (!state.hasValue || state.isLoading) {
       return;
     }
     var mo = state.value!;
@@ -26,10 +26,10 @@ class CurrentMonth extends _$CurrentMonth {
 
   ///* This will invalidate the provider updateing the value
   Future<void> updateMonth(Month nm) async {
+    if (state.isLoading) return;
     await box.delete('${nm.year}/${nm.month}');
     await box.put('${nm.year}/${nm.month}', jsonEncode(nm.toJson()));
     ref.invalidateSelf();
-    ref.read(currentMonthProvider);
   }
 
   @override
@@ -85,4 +85,16 @@ int currentDailyTotal(Ref ref) {
   ).difference(dt).inDays;
 
   return (currentTotal / daysLeft.abs()).floor();
+}
+
+@riverpod
+class CustomDate extends _$CustomDate {
+  void setCustomDate(int nw) {
+    state = nw;
+  }
+
+  @override
+  int build() {
+    return -1;
+  }
 }
