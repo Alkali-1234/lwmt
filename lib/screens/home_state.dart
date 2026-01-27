@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:hive/hive.dart';
+import 'package:lwmt/logger.dart';
 import 'package:lwmt/models/day.dart';
 import 'package:lwmt/models/month.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -15,12 +16,16 @@ class CurrentMonth extends _$CurrentMonth {
     if (!state.hasValue || state.isLoading) {
       return;
     }
+    logger.i("Updating day: $day");
     var mo = state.value!;
-    int idx = mo.days.indexWhere((day) => day.day == day.day);
+    logger.i("Month was: $mo");
+    int idx = mo.days.indexWhere((d) => d.day == day.day);
+    logger.d("Idx was $idx");
     if (idx == -1) {
       return;
     }
     mo.days[idx] = day;
+    logger.i("Setting month to: $mo");
     await updateMonth(mo);
   }
 
@@ -51,7 +56,7 @@ class CurrentMonth extends _$CurrentMonth {
           .inDays;
       List<Day> days = List.generate(
         diff.abs(),
-        (index) => Day(day: index, spendings: []),
+        (index) => Day(day: index + 1, spendings: []),
       );
       var mo = Month(allocation: 0, month: dt.month, year: dt.year, days: days);
       await box.put('${dt.year}/${dt.month}', jsonEncode(mo.toJson()));

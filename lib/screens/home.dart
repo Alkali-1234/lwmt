@@ -60,11 +60,12 @@ class LeftPanel extends ConsumerStatefulWidget {
 }
 
 class _LeftPanelState extends ConsumerState<LeftPanel> {
-  int currentDay = DateTime.now().day;
   @override
   Widget build(BuildContext context) {
     var currentMonth = ref.watch(currentMonthProvider);
     var currentTotal = ref.watch(currentTotalProvider);
+    var customDate = ref.watch(customDateProvider);
+    int currentDay = customDate != -1 ? customDate : DateTime.now().day;
     return Padding(
       padding: const EdgeInsetsGeometry.all(32),
       child: Column(
@@ -282,8 +283,7 @@ class _EditSpendWidgetState extends ConsumerState<EditSpendWidget> {
                   int.tryParse(controllerValue.text) ?? 10000,
                 ),
         );
-    nm.days.firstWhere((d) => d.day == DateTime.now().day).spendings = li
-        .toList();
+    nm.days.firstWhere((d) => d.day == widget.day).spendings = li.toList();
     ref.read(currentMonthProvider.notifier).updateMonth(nm.copyWith());
   }
 
@@ -319,7 +319,6 @@ class _EditSpendWidgetState extends ConsumerState<EditSpendWidget> {
                 ],
               ),
             ),
-            //TODO: (1) Trash item fun (2) edit item fun
             Expanded(
               child: SizedBox(
                 height: 40,
