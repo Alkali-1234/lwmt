@@ -65,6 +65,8 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
     var currentMonth = ref.watch(currentMonthProvider);
     var currentTotal = ref.watch(currentTotalProvider);
     var customDate = ref.watch(customDateProvider);
+    var dailyProj = ref.watch(currentDailyTotalProvider);
+    var totalToday = ref.watch(totalTodayProvider);
     int currentDay = customDate != -1 ? customDate : DateTime.now().day;
     return Padding(
       padding: const EdgeInsetsGeometry.all(32),
@@ -81,7 +83,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
           ),
           const SizedBox(height: 8),
           Text(
-            "IDR ${currentTotal.toString()},00",
+            "IDR ${dailyProj.toString()},00",
             style: TextStyle(fontFamily: 'GoogleSansFlex', fontSize: 36),
           ),
           const SizedBox(height: 48),
@@ -93,7 +95,7 @@ class _LeftPanelState extends ConsumerState<LeftPanel> {
                   style: TextStyle(fontWeight: FontWeight.w400, fontSize: 24),
                 ),
                 TextSpan(
-                  text: "Unimplemented",
+                  text: totalToday.toString(),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
                 ),
               ],

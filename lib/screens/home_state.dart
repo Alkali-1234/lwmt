@@ -103,3 +103,16 @@ class CustomDate extends _$CustomDate {
     return -1;
   }
 }
+
+@riverpod
+int totalToday(Ref ref) {
+  var custDate = ref.watch(customDateProvider);
+  var mo = ref.watch(currentMonthProvider);
+  if (mo.value == null) return 0;
+  int d = custDate != -1 ? custDate : DateTime.now().day;
+  int res = 0;
+  for (var e in mo.value!.days.firstWhere((e) => e.day == d).spendings) {
+    res += e.$2;
+  }
+  return res;
+}

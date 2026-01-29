@@ -33,7 +33,7 @@ final class CurrentMonthProvider
   CurrentMonth create() => CurrentMonth();
 }
 
-String _$currentMonthHash() => r'25c28986260e7572303d7d7c6ffd2e208d878c6e';
+String _$currentMonthHash() => r'50a1e7cb1acc977c239d91a1aa16b39440848aed';
 
 abstract class _$CurrentMonth extends $AsyncNotifier<Month> {
   FutureOr<Month> build();
@@ -183,3 +183,43 @@ abstract class _$CustomDate extends $Notifier<int> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(totalToday)
+final totalTodayProvider = TotalTodayProvider._();
+
+final class TotalTodayProvider extends $FunctionalProvider<int, int, int>
+    with $Provider<int> {
+  TotalTodayProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'totalTodayProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$totalTodayHash();
+
+  @$internal
+  @override
+  $ProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  int create(Ref ref) {
+    return totalToday(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int>(value),
+    );
+  }
+}
+
+String _$totalTodayHash() => r'ee4ce4b3a1ceaead60019cfb97e7dddb677166c8';
