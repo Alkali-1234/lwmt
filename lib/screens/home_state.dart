@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:lwmt/logger.dart';
 import 'package:lwmt/models/day.dart';
 import 'package:lwmt/models/month.dart';
